@@ -83,6 +83,12 @@ const stats = {
   errors: [],
 };
 
+// "CRTR-220" → 220 (the numeric suffix), or null if there isn't one.
+function jiraNumber(jiraId) {
+  const m = /(\d+)\s*$/.exec(String(jiraId));
+  return m ? Number(m[1]) : null;
+}
+
 function mapStatus(clickupStatus) {
   const key = (clickupStatus || "").toLowerCase();
   return statusCfg.map[key] || statusCfg.default;
@@ -126,6 +132,8 @@ async function importTask(task) {
     assignees,
     external_source: EXTERNAL_SOURCE,
     external_id: jiraId,
+    // Mirror the Jira issue number into the Projector ref: CRTR-220 → EVK-220.
+    ...(jiraNumber(jiraId) ? { ref_number: jiraNumber(jiraId) } : {}),
     fields: {
       "Jira ID": jiraId,
       ...(jiraUrl ? { "Jira URL": jiraUrl } : {}),
