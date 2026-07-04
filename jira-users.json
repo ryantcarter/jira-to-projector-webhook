@@ -1,0 +1,5 @@
+{
+  "_comment": "Map Jira accountId -> display info. `mm` is optional; when present it's used for @mentions in Mattermost so the person actually gets pinged.",
+  "712020:251a13d8-17ac-4501-a661-a451f230924a": { "name": "Sammi Manoff", "mm": "sammi" },
+  "712020:699aad49-2f08-454a-8f41-5be54e1ad662": { "name": "Ryan Carter", "mm": "" }
+}

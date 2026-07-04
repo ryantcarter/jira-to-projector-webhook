@@ -46,6 +46,9 @@ const ONLY_TASK = (() => {
   const i = args.indexOf("--task");
   return i >= 0 ? args[i + 1] : null;
 })();
+// Import only the time pass — skip task upserts and comment writes (which are
+// already done and idempotent). Still pages tasks to map ClickUp id → ref.
+const TIME_ONLY = args.includes("--time-only");
 
 const required = ["CLICKUP_TOKEN", "CLICKUP_LIST_ID", "PROJECTOR_API_URL", "PROJECTOR_API_KEY"];
 for (const k of required) {
@@ -80,8 +83,19 @@ const stats = {
   comments: 0,
   commentsSkipped: 0,
   assigneesDropped: 0,
+  time: 0,
+  timeMs: 0,
+  timeSkipped: 0,
   errors: [],
 };
+
+// ClickUp task id -> Projector ref, filled as tasks import, used by the
+// time pass (time entries reference the ClickUp task, we log against the ref).
+const refByClickupId = new Map();
+
+// Time window for the ClickUp time-entries pull (civil, generous).
+const TIME_START = Date.parse("2024-01-01T00:00:00Z");
+const TIME_END = Date.parse("2027-01-01T00:00:00Z");
 
 // "CRTR-220" → 220 (the numeric suffix), or null if there isn't one.
 function jiraNumber(jiraId) {
@@ -121,6 +135,12 @@ async function importTask(task) {
   }
   if (ONLY_TASK && jiraId !== ONLY_TASK) return;
 
+  // Time-only: just record the ref, skip all writes and the comment pass.
+  if (TIME_ONLY) {
+    refByClickupId.set(task.id, `EVK-${jiraNumber(jiraId)}`);
+    return;
+  }
+
   stats.tasks++;
   const jiraUrl = customField(task, "Jira");
   const status = mapStatus(task.status?.status);
@@ -159,7 +179,10 @@ async function importTask(task) {
     if (res.existing) {
       await projector.patchTask(ref, { status, title: task.name });
     }
+  } else {
+    ref = `EVK-${jiraNumber(jiraId)}`;
   }
+  refByClickupId.set(task.id, ref);
 
   // Comments.
   const comments = await clickup.taskComments(task.id);
@@ -189,6 +212,47 @@ async function importTask(task) {
   }
 }
 
+// Mirror ClickUp tracked time onto the Projector tasks. Runs after tasks so
+// refByClickupId is populated. Idempotent on external_id (clickup:time:<id>).
+async function importTime() {
+  const team = await clickup.team();
+  const entries = await clickup.timeEntries(
+    team.id,
+    team.memberIds,
+    TIME_START,
+    TIME_END,
+  );
+  const mine = entries.filter((e) => e.task && refByClickupId.has(e.task.id));
+  console.log(`\nTime: ${mine.length} entries on mirrored tasks.`);
+  for (const e of mine) {
+    const durationMs = Number(e.duration);
+    if (!durationMs || durationMs <= 0) continue; // running/zero
+    const email = (e.user?.email || "").toLowerCase();
+    const user = identity[email];
+    if (!user) {
+      stats.timeSkipped++;
+      continue;
+    }
+    const ref = refByClickupId.get(e.task.id);
+    const payload = {
+      user,
+      duration_ms: durationMs,
+      when: new Date(Number(e.start)).toISOString(),
+      external_id: `clickup:time:${e.id}`,
+      ...(e.description ? { note: e.description } : {}),
+    };
+    if (DRY) {
+      console.log(
+        `   DRY time ${ref} ${(durationMs / 3600000).toFixed(2)}h ${user}`,
+      );
+    } else {
+      await projector.importTime(ref, payload);
+    }
+    stats.time++;
+    stats.timeMs += durationMs;
+  }
+}
+
 async function main() {
   console.log(
     `${DRY ? "[DRY RUN] " : ""}Mirroring ClickUp list ${env.CLICKUP_LIST_ID} → ` +
@@ -212,6 +276,15 @@ async function main() {
     if (n % 25 === 0) console.log(`  …${n}/${tasks.length}`);
   }
 
+  // Time pass (skipped when only importing a single --task, to keep that
+  // fast and scoped — a single task's ref is still in refByClickupId).
+  try {
+    await importTime();
+  } catch (err) {
+    stats.errors.push(`time pass: ${err.message}`);
+    console.error(`  ✗ time pass: ${err.message}`);
+  }
+
   console.log("\n=== Summary ===");
   console.log(`Tasks processed:  ${stats.tasks}`);
   console.log(`  created:        ${stats.tasksCreated}`);
@@ -219,6 +292,10 @@ async function main() {
   console.log(`Comments imported:${stats.comments}`);
   console.log(`Comments skipped: ${stats.commentsSkipped} (unmapped author)`);
   console.log(`Assignees dropped:${stats.assigneesDropped} (unmapped person)`);
+  console.log(
+    `Time entries:     ${stats.time} (${(stats.timeMs / 3600000).toFixed(1)}h)`,
+  );
+  console.log(`Time skipped:     ${stats.timeSkipped} (unmapped person)`);
   console.log(`Errors:           ${stats.errors.length}`);
   for (const e of stats.errors.slice(0, 20)) console.log(`  ! ${e}`);
 }

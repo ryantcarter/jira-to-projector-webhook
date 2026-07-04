@@ -1,0 +1,24 @@
+{
+  "_comment": "Resolve a Jira actor (comment author / assignee) to a Projector staff email. Tried in order: the actor's emailAddress if the webhook exposes it, then their display name (lowercased) here. Unresolved comment authors fall back to the API key's person (no comment is lost); unresolved assignees are simply omitted.",
+  "byName": {
+    "ryan carter": "ryn@crtr.co.uk",
+    "addison taylor": "addison@crtr.co.uk",
+    "addison": "addison@crtr.co.uk",
+    "ryan scurfield": "ryan.scurfield@crtr.co.uk",
+    "danny pearson": "danny@crtr.co.uk",
+    "scot haley": "scot@crtr.co.uk",
+    "jennie hawkes": "jennie@crtr.co.uk",
+    "steve green": "steve@crtr.co.uk",
+    "adam bramfitt": "adam@crtr.co.uk"
+  },
+  "knownEmails": [
+    "ryn@crtr.co.uk",
+    "addison@crtr.co.uk",
+    "ryan.scurfield@crtr.co.uk",
+    "danny@crtr.co.uk",
+    "scot@crtr.co.uk",
+    "jennie@crtr.co.uk",
+    "steve@crtr.co.uk",
+    "adam@crtr.co.uk"
+  ]
+}

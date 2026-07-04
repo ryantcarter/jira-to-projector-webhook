@@ -3,12 +3,17 @@
   "version": "1.0.0",
   "type": "module",
   "private": true,
-  "description": "Mirrors the ClickUp Evoke board into Projector, and (Phase C) keeps Projector updated from the same Jira feed as the ClickUp bridge.",
+  "description": "Mirrors the ClickUp Evoke board into Projector and keeps it live from the same Jira feed as the ClickUp bridge.",
   "scripts": {
+    "start": "node server.js",
     "backfill": "node scripts/backfill.js",
-    "backfill:dry": "node scripts/backfill.js --dry-run"
+    "backfill:dry": "node scripts/backfill.js --dry-run",
+    "smoke": "node scripts/smoke.js"
   },
   "engines": {
     "node": ">=18"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
   }
 }

@@ -1,0 +1,24 @@
+{
+  "_comment": "Jira status name (lowercased) -> Projector status name. Projector ships 8 statuses. Mirrors the intent of xml-to-clickup's STATUS_ALIASES but targets Projector's set. Unknown Jira statuses fall back to `default`.",
+  "default": "backlog",
+  "map": {
+    "backlog": "backlog",
+    "brief quarantine": "backlog",
+    "brief": "backlog",
+    "selected for development": "ready to start",
+    "ready to start": "ready to start",
+    "in progress": "in progress",
+    "in review": "awaiting feedback",
+    "ready to review": "awaiting feedback",
+    "recieved into": "awaiting feedback",
+    "awaiting feedback": "awaiting feedback",
+    "changes requested": "changes requested",
+    "on hold": "on hold",
+    "blocked": "on hold",
+    "with client": "with client",
+    "ready to send": "with client",
+    "done": "with client",
+    "complete": "complete",
+    "closed": "complete"
+  }
+}

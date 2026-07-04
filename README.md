@@ -23,9 +23,11 @@ and its comments and writes them over the Projector REST API.
   Jira-synced ClickUp comments reuse the Jira comment id as their key so the
   live service won't re-add them. Imported as **internal notes** by default
   (`COMMENTS_INTERNAL=true`).
-- **Time** — deliberately none. The Evoke team never used ClickUp's timer
-  (0 entries), so there is no genuine duration data to mirror. Projector's
-  time-import endpoint exists for when real tracking begins.
+- **Time** — the team's tracked time crosses over too (`--time-only` to run
+  just this pass). ClickUp's `time_entries` endpoint only returns the caller's
+  own entries unless every member is named in `assignee`, so we pass the full
+  member list; entries are attributed to the real person, dated, and idempotent
+  on `clickup:time:<id>`. (~528 entries / 870h on Evoke at first import.)
 
 ```bash
 cp .env.example .env   # fill in tokens
@@ -37,19 +39,49 @@ node scripts/backfill.js                     # the lot (274 tasks)
 
 Everything is idempotent — safe to re-run after a failure or to catch up.
 
-## 2. Live service (Phase C) — planned
+## 2. Live service (`server.js`) — built
 
-A fork of `xml-to-clickup`'s Jira snapshot/diff engine with the ClickUp writer
-swapped for `lib/projector.js`. The same Jira webhook fans out to both systems,
-so Projector tracks status/field/comment changes the same way ClickUp does.
-Deploys next to the ClickUp bridge on its own port.
+The webhook listener that keeps Projector current from Jira, running next to
+the ClickUp bridge on its own port. Because Projector upserts are idempotent
+(`external_source`+`external_id`) and comments dedupe on `jira:comment:<id>`,
+there is **no local snapshot/diff engine** — each webhook simply re-asserts the
+desired state.
+
+Endpoints (basic-auth guarded): `POST /jira/issue-created`,
+`/jira/issue-updated`, `/jira/comment-added`, plus `GET /health`. Each one:
+
+1. Upserts the task (`ref_number` = the Jira issue number, so CRTR-220 → EVK-220).
+2. Re-asserts title / description / status / due date / assignee on updates.
+3. Syncs the issue's comments (author-attributed, backdated, internal notes).
+
+An in-memory **high-water mark** per issue drops out-of-order webhooks so an
+older payload can't revert newer state. `config/jira-status-map.json` maps Jira
+statuses → Projector's 8; `config/jira-identity-map.json` resolves Jira actors
+→ Projector emails (unresolved comment authors fall back to the key's person,
+so nothing is lost; unresolved assignees are omitted).
+
+```bash
+node scripts/smoke.js          # dry-run the mapping over samples/ (no writes)
+pnpm start                     # run the listener
+pm2 start ecosystem.config.cjs # production, alongside xml-to-clickup
+```
+
+**Wiring it up:** point the same Jira webhook/automation that feeds
+xml-to-clickup at this service too — e.g.
+`https://<user>:<pass>@<host>:38473/jira/issue-updated` (and the create /
+comment endpoints). Both systems then move together.
 
 ## Layout
 
 ```
-config/identity-map.json   ClickUp email → Projector email (authors, assignees)
-config/status-map.json     ClickUp status → Projector status
-lib/clickup.js             ClickUp v2 read client (throttled)
-lib/projector.js           Projector REST write client
-scripts/backfill.js        the mirror
+config/identity-map.json       ClickUp email → Projector email (backfill)
+config/status-map.json         ClickUp status → Projector status (backfill)
+config/jira-status-map.json    Jira status → Projector status (live)
+config/jira-identity-map.json  Jira actor → Projector email (live)
+lib/clickup.js                 ClickUp v2 read client (throttled)
+lib/projector.js               Projector REST write client
+lib/jira.js + jira-markdown.js Jira payload → Projector shapes
+scripts/backfill.js            the one-time mirror (+ --time-only)
+scripts/smoke.js               dry mapping test over samples/
+server.js                      the live webhook listener
 ```
