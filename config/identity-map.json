@@ -1,0 +1,14 @@
+{
+  "_comment": "ClickUp person -> Projector staff email. Keyed by ClickUp email (lowercased). Used for comment authorship and task assignees. `null` = deliberately unmapped (their comments are skipped and logged, they're never assigned). Reviewed 2026-07-04: all Evoke staff share their @crtr.co.uk email across both systems; only Elaine (external homesforstudents contact) is unmapped.",
+  "map": {
+    "ryn@crtr.co.uk": "ryn@crtr.co.uk",
+    "addison@crtr.co.uk": "addison@crtr.co.uk",
+    "ryan.scurfield@crtr.co.uk": "ryan.scurfield@crtr.co.uk",
+    "danny@crtr.co.uk": "danny@crtr.co.uk",
+    "scot@crtr.co.uk": "scot@crtr.co.uk",
+    "jennie@crtr.co.uk": "jennie@crtr.co.uk",
+    "steve@crtr.co.uk": "steve@crtr.co.uk",
+    "adam@crtr.co.uk": "adam@crtr.co.uk",
+    "elaine.croker@wearehomesforstudents.com": null
+  }
+}

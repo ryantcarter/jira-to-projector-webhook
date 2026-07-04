@@ -1,0 +1,14 @@
+{
+  "name": "jira-to-projector",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "description": "Mirrors the ClickUp Evoke board into Projector, and (Phase C) keeps Projector updated from the same Jira feed as the ClickUp bridge.",
+  "scripts": {
+    "backfill": "node scripts/backfill.js",
+    "backfill:dry": "node scripts/backfill.js --dry-run"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
