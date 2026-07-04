@@ -66,10 +66,16 @@ pnpm start                     # run the listener
 pm2 start ecosystem.config.cjs # production, alongside xml-to-clickup
 ```
 
+**Deploy** (same as xml-to-clickup): a Forge site whose deploy script is
+`forge-deploy.sh`; the app runs under pm2 on port 38473 and Forge's nginx
+reverse-proxies the site's domain → `127.0.0.1:38473`. The `.env` lives in the
+site path on the server (not in git).
+
 **Wiring it up:** point the same Jira webhook/automation that feeds
-xml-to-clickup at this service too — e.g.
-`https://<user>:<pass>@<host>:38473/jira/issue-updated` (and the create /
-comment endpoints). Both systems then move together.
+xml-to-clickup at this service's domain too — the create / update / comment
+endpoints, with the same basic-auth creds:
+`https://<user>:<pass>@<domain>/jira/issue-updated`. Both systems then move
+together off the one Jira feed.
 
 ## Layout
 
