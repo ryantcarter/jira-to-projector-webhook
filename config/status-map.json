@@ -1,5 +1,5 @@
 {
-  "_comment": "ClickUp Evoke status (lowercased) -> Projector status name. Projector ships a single global 8-status set (backlog, ready to start, in progress, awaiting feedback, changes requested, with client, on hold, complete); ClickUp's finer 15-status set collapses onto it. Any ClickUp status missing here falls back to DEFAULT_STATUS below.",
+  "_comment": "ClickUp Evoke status (lowercased) -> Projector status name. Projector's global status set now includes 'ready to send' (backlog, ready to start, in progress, awaiting feedback, changes requested, ready to send, with client, on hold, complete); ClickUp's finer 15-status set collapses onto it. Any ClickUp status missing here falls back to DEFAULT_STATUS below.",
   "default": "backlog",
   "map": {
     "backlog": "backlog",
@@ -13,7 +13,7 @@
     "in review": "awaiting feedback",
     "awaiting feedback": "awaiting feedback",
     "changes requested": "changes requested",
-    "ready to send": "with client",
+    "ready to send": "ready to send",
     "with client": "with client",
     "on hold": "on hold",
     "complete": "complete"
