@@ -65,6 +65,30 @@ function serializeByKey(key, fn) {
   return next;
 }
 
+// --- Custom fields (the Jira ID/URL pair and the mirrored Priority) are
+// re-asserted on every sync. If the Evoke board hasn't got one of them yet,
+// Projector answers 422 "Unknown field" — which would otherwise take the whole
+// task update down with it, stopping title/status/comments too. Drop the field
+// set once, loudly, and let the rest of the sync keep flowing. ---
+let fieldsEnabled = true;
+
+async function withFields(body, write) {
+  if (!body.fields) return write(body);
+  const { fields, ...rest } = body;
+  if (!fieldsEnabled) return write(rest);
+  try {
+    return await write(body);
+  } catch (err) {
+    if (err.status !== 422 || !/Unknown field/.test(err.message)) throw err;
+    console.error(
+      `[fields] ${err.message} — add it on the Evoke board (Settings → Fields). ` +
+        `Custom fields are skipped until this service restarts.`,
+    );
+    fieldsEnabled = false;
+    return write(rest);
+  }
+}
+
 // --- drop out-of-order webhooks: Jira can deliver bursts unordered, and an
 // older payload would revert a newer state. In-memory high-water mark per key
 // (fine for a parallel-run trial; a restart at worst lets one stale update
@@ -85,7 +109,7 @@ async function syncIssue(issue) {
   if (incoming) lastUpdated.set(key, incoming);
 
   const body = taskBody(issue, { externalSource: EXTERNAL_SOURCE });
-  const res = await projector.upsertTask(body);
+  const res = await withFields(body, (b) => projector.upsertTask(b));
   const ref = res.ref;
 
   // A replayed (existing) task isn't updated by the idempotent create, so
@@ -95,10 +119,13 @@ async function syncIssue(issue) {
       title: body.title,
       description: body.description,
       status: body.status,
+      // Creates skip `fields` on a replay, so the patch is the only thing
+      // keeping a changed Jira priority in step.
+      fields: body.fields,
     };
     if (body.due_date) patch.due_date = body.due_date;
     if (body.assignees) patch.assignees = body.assignees;
-    await projector.patchTask(ref, patch);
+    await withFields(patch, (p) => projector.patchTask(ref, p));
   }
 
   // Comments — idempotent on jira:comment:<id> (the same key the ClickUp

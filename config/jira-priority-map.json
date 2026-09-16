@@ -1,0 +1,47 @@
+{
+  "_comment": "Jira priority name (lowercased) -> Spectrum 'Priority' dropdown option. CRTR sits on Jira's DEFAULT priority scheme, so all 43 instance priorities are selectable even though only a handful are ever used (a scan of 447 CRTR issues found Medium 397, Urgent 24, High 13, Major (migrated) 7, Unspecified 3, Major 2, P3 1). Rather than mirror 43 names onto the board, they collapse onto four rungs the same way config/jira-status-map.json collapses statuses. Names in `clear` mean 'no priority' and empty the field; anything unrecognised falls back to `default` and logs a warning so it can be added here.",
+  "field": "Priority",
+  "default": "Medium",
+  "clear": ["unspecified", "not set"],
+  "map": {
+    "urgent": "Urgent",
+    "asap": "Urgent",
+    "blocker": "Urgent",
+    "critical": "Urgent",
+    "p1": "Urgent",
+    "p1 (migrated)": "Urgent",
+    "p1 (migrated 2)": "Urgent",
+
+    "high": "High",
+    "high (migrated)": "High",
+    "major": "High",
+    "major (migrated)": "High",
+    "major (migrated 2)": "High",
+    "p2": "High",
+    "p2 (migrated)": "High",
+    "p2 (migrated 2)": "High",
+
+    "medium": "Medium",
+    "normal": "Medium",
+    "moderate": "Medium",
+    "p3": "Medium",
+    "p3 (migrated)": "Medium",
+    "p3 (migrated 2)": "Medium",
+
+    "low": "Low",
+    "minor": "Low",
+    "minor (migrated)": "Low",
+    "very low": "Low",
+    "trivial": "Low",
+    "trivial (migrated)": "Low",
+    "trivial (migrated 2)": "Low",
+    "deferred": "Low",
+    "deferred (migrated)": "Low",
+    "p4": "Low",
+    "p4 (migrated)": "Low",
+    "p4 (migrated 2)": "Low",
+    "p5": "Low",
+    "p5 (migrated)": "Low",
+    "p5 (migrated 2)": "Low"
+  }
+}
